@@ -1,57 +1,65 @@
-import React, { useState } from 'react';
-import '../App.css';
-import ReactMarkdown from 'react-markdown';
-import { FaPaperPlane } from 'react-icons/fa';
-import { Container, Row, Col, InputGroup, FormControl, Button } from 'react-bootstrap';
+import React, { useState } from "react";
+import axios from "axios";
+import "../App.css";
+import { FaPaperPlane } from "react-icons/fa";
+import { Container, Row, Col, InputGroup, FormControl, Button } from "react-bootstrap";
 
 function Chatbot() {
   const [messages, setMessages] = useState([]);
-  const [input, setInput] = useState('');
+  const [input, setInput] = useState("");
 
-  const handleMessageSend = () => {
-    if (input.trim() !== '') {
-      const newMessage = { text: input, sender: 'user' };
-      setMessages(prevMessages => [...prevMessages, newMessage]);
-      setInput('');
+  // Load API Key from .env
+  const API_KEY = process.env.REACT_APP_API_KEY; 
 
-      // Simulating bot response
-      setTimeout(() => {
-        const botMessage = { text: "Hello! How can I help you?", sender: 'bot' };
-        setMessages(prevMessages => [...prevMessages, botMessage]);
-      }, 1000);
+  const handleMessageSend = async () => {
+    if (input.trim() !== "") {
+      const userMessage = { text: input, sender: "user" };
+      setMessages((prevMessages) => [...prevMessages, userMessage]);
+      setInput("");
+
+      try {
+        const response = await axios.post(
+          `https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${API_KEY}`,
+          {
+            contents: [{ parts: [{ text: input }] }],
+          }
+        );
+
+        const botReply = response.data?.candidates?.[0]?.content?.parts?.[0]?.text || "I'm not sure how to respond.";
+        const botMessage = { text: botReply, sender: "bot" };
+        setMessages((prevMessages) => [...prevMessages, botMessage]);
+      } catch (error) {
+        console.error("Error fetching response:", error);
+        const errorMessage = { text: "Sorry, I couldn't get a response. Try again!", sender: "bot" };
+        setMessages((prevMessages) => [...prevMessages, errorMessage]);
+      }
     }
   };
 
   return (
-    <Container fluid className="d-flex flex-column justify-content-center align-items-center chat-container">
-      <Row className="chat-box p-3">
+    <Container fluid className="d-flex flex-column align-items-center chat-container">
+      <Row className="chat-box">
         <Col className="overflow-auto">
           {messages.map((message, index) => (
-            <div key={index} className={`message ${message.sender} p-2 rounded`}>
-              {message.sender === 'bot' ? (
-                <ReactMarkdown>{message.text}</ReactMarkdown>
-              ) : (
-                message.text
-              )}
+            <div key={index} className={`message ${message.sender}`}>
+              <div className="message-bubble">{message.text}</div>
             </div>
           ))}
         </Col>
       </Row>
-      <Row className="input-box fixed-bottom w-100 d-flex justify-content-center">
-        <Col md={6}>
-          <InputGroup className="shadow-sm">
+
+      {/* Input inside the chat container */}
+      <Row className="input-box w-100">
+        <Col md={8} className="d-flex">
+          <InputGroup className="w-100">
             <FormControl
               type="text"
               placeholder="Type a message..."
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              onKeyPress={(e) => {
-                if (e.key === 'Enter') {
-                  handleMessageSend();
-                }
-              }}
+              onKeyPress={(e) => e.key === "Enter" && handleMessageSend()}
             />
-            <Button variant="warning" onClick={handleMessageSend}>
+            <Button variant="success" onClick={handleMessageSend}>
               <FaPaperPlane />
             </Button>
           </InputGroup>
