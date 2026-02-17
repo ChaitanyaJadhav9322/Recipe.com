@@ -11,7 +11,7 @@ function Chatbot() {
   const [isOpen, setIsOpen] = useState(false);
   const chatRef = useRef(null);
 
-  const API_KEY = "AIzaSyDiJQPsRG8KwAbjcZ7yzUSezq-dc_8LUN8";
+  const API_KEY = "AIzaSyBfiH0chSCVA1SkekWxlHBApSvwiRxq8DE";
 
   const handleMessageSend = async () => {
     if (input.trim() !== "") {
