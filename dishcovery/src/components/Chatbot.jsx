@@ -24,17 +24,18 @@ function Chatbot() {
     setLoading(true);
 
     try {
-      const response = await axios.post(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`,
-        {
-          contents: [
-            {
-              role: "user",
-              parts: [{ text: input }],
-            },
-          ],
-        }
-      );
+     const response = await axios.post(
+  `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${API_KEY}`,
+  {
+    contents: [
+      {
+        role: "user",
+        parts: [{ text: input }],
+      },
+    ],
+  }
+);
+
 
       const botReply =
         response.data?.candidates?.[0]?.content?.parts?.[0]?.text ||
