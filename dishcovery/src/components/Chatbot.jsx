@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect } from "react";
-import axios from "axios";
 import Draggable from "react-draggable";
 import "../App.css";
 import { FaPaperPlane, FaRobot, FaTimes } from "react-icons/fa";
 import { Container, Row, Col, InputGroup, FormControl, Button } from "react-bootstrap";
+import { GoogleGenAI } from "@google/genai";
 
 function Chatbot() {
   const [messages, setMessages] = useState([]);
@@ -12,8 +12,10 @@ function Chatbot() {
   const [loading, setLoading] = useState(false);
   const chatRef = useRef(null);
 
-  // ⚠️ Direct API key (visible in frontend)
-  const API_KEY = "AIzaSyC4jBo27fnBw6ytJ-0N1hwXwModrlJLlig";
+  // ⚠️ Replace with NEW API key (delete old exposed one)
+  const ai = new GoogleGenAI({
+    apiKey: "YOUR_NEW_API_KEY_HERE",
+  });
 
   const handleMessageSend = async () => {
     if (!input.trim()) return;
@@ -24,26 +26,17 @@ function Chatbot() {
     setLoading(true);
 
     try {
-     const response = await axios.post(
-  `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${API_KEY}`,
-  {
-    contents: [
-      {
-        role: "user",
-        parts: [{ text: input }],
-      },
-    ],
-  }
-);
+      const response = await ai.models.generateContent({
+        model: "gemini-2.5-flash", // ✅ Free fast model
+        contents: input,
+      });
 
-
-      const botReply =
-        response.data?.candidates?.[0]?.content?.parts?.[0]?.text ||
-        "No response generated.";
-
-      setMessages((prev) => [...prev, { text: botReply, sender: "bot" }]);
+      setMessages((prev) => [
+        ...prev,
+        { text: response.text, sender: "bot" },
+      ]);
     } catch (error) {
-      console.error(error.response?.data || error.message);
+      console.error("Gemini Error:", error);
       setMessages((prev) => [
         ...prev,
         { text: "❌ API Error. Please try again.", sender: "bot" },
@@ -53,7 +46,7 @@ function Chatbot() {
     setLoading(false);
   };
 
-  // ✅ Auto-scroll
+  // Auto scroll
   useEffect(() => {
     if (chatRef.current) {
       chatRef.current.scrollTop = chatRef.current.scrollHeight;
