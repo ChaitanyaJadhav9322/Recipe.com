@@ -13,7 +13,7 @@ function Chatbot() {
   const chatRef = useRef(null);
 
   // ⚠️ Direct API key (visible in frontend)
-  const API_KEY = "AIzaSyDiJQPsRG8KwAbjcZ7yzUSezq-dc_8LUN8";
+  const API_KEY = "AIzaSyC4jBo27fnBw6ytJ-0N1hwXwModrlJLlig";
 
   const handleMessageSend = async () => {
     if (!input.trim()) return;
