@@ -14,7 +14,7 @@ function Chatbot() {
 
   // ⚠️ Replace with NEW API key (delete old exposed one)
   const ai = new GoogleGenAI({
-    apiKey: "AIzaSyC4jBo27fnBw6ytJ-0N1hwXwModrlJLlig",
+    apiKey: "AIzaSyCGpXlU9j0ZU4U21Cbex5DBbComuSm0jO8",
   });
 
   const handleMessageSend = async () => {
