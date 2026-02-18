@@ -1,75 +1,87 @@
 import React, { useState, useRef, useEffect } from "react";
-import Draggable from "react-draggable";
+import axios from "axios";
+import Draggable from "react-draggable"; // ✅ Import Draggable
 import "../App.css";
 import { FaPaperPlane, FaRobot, FaTimes } from "react-icons/fa";
 import { Container, Row, Col, InputGroup, FormControl, Button } from "react-bootstrap";
-import { GoogleGenAI } from "@google/genai";
 
 function Chatbot() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [isOpen, setIsOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
   const chatRef = useRef(null);
 
-  // ⚠️ Replace with NEW API key (delete old exposed one)
-  const ai = new GoogleGenAI({
-    apiKey: "AIzaSyCGpXlU9j0ZU4U21Cbex5DBbComuSm0jO8",
-  });
+  const API_KEY ="AIzaSyCGpXlU9j0ZU4U21Cbex5DBbComuSm0jO8";
 
   const handleMessageSend = async () => {
-    if (!input.trim()) return;
+    if (input.trim() !== "") {
+      const userMessage = { text: input, sender: "user" };
+      setMessages((prevMessages) => [...prevMessages, userMessage]);
+      setInput("");
 
-    const userMessage = { text: input, sender: "user" };
-    setMessages((prev) => [...prev, userMessage]);
-    setInput("");
-    setLoading(true);
+      try {
+        console.log("API Key:", API_KEY); // ✅ Debugging API key
+        const response = await axios.post(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`,
+          { contents: [{ role: "user", parts: [{ text: input }] }] } // ✅ Fixed payload structure
+        );
 
-    try {
-      const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash", // ✅ Free fast model
-        contents: input,
-      });
-
-      setMessages((prev) => [
-        ...prev,
-        { text: response.text, sender: "bot" },
-      ]);
-    } catch (error) {
-      console.error("Gemini Error:", error);
-      setMessages((prev) => [
-        ...prev,
-        { text: "❌ API Error. Please try again.", sender: "bot" },
-      ]);
+        console.log("API Response:", response.data); // ✅ Debug API response
+        const botReply =
+          response.data?.candidates?.[0]?.content?.parts?.[0]?.text ||
+          "I'm not sure how to respond.";
+        setMessages((prevMessages) => [...prevMessages, { text: botReply, sender: "bot" }]);
+      } catch (error) {
+        console.error("Error fetching response:", error.response?.data || error.message);
+        setMessages((prevMessages) => [
+          ...prevMessages,
+          { text: "❌ API Error! Please try again later.", sender: "bot" },
+        ]);
+      }
     }
-
-    setLoading(false);
   };
 
-  // Auto scroll
+  // ✅ Scroll to bottom when new message appears
   useEffect(() => {
     if (chatRef.current) {
       chatRef.current.scrollTop = chatRef.current.scrollHeight;
     }
   }, [messages]);
 
+  // ✅ Close chat when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (chatRef.current && !chatRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+    if (isOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    } else {
+      document.removeEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isOpen]);
+
   return (
     <>
+      {/* ✅ Floating Chatbot Button (Draggable) */}
       {!isOpen && (
-        <Draggable>
+        <Draggable bounds="parent" grid={[1, 1]}>
           <div className="chatbot-button" onClick={() => setIsOpen(true)}>
             <FaRobot size={30} />
           </div>
         </Draggable>
       )}
 
+      {/* ✅ Draggable Chatbox */}
       {isOpen && (
-        <Draggable handle=".chat-header">
-          <div className="chat-container">
+        <Draggable handle=".chat-header" bounds="parent" grid={[1, 1]}>
+          <div className="chat-container" ref={chatRef}>
             <Container fluid className="chat-box">
-              {/* Header */}
+              {/* Chat Header */}
               <div className="chat-header">
-                <h5>AI Assistant 🤖</h5>
+                <h5 className="drag-handle">AI Assistant 🤖</h5>
                 <button className="close-btn" onClick={() => setIsOpen(false)}>
                   <FaTimes />
                 </button>
@@ -77,17 +89,12 @@ function Chatbot() {
 
               {/* Messages */}
               <Row className="chat-content">
-                <Col className="overflow-auto" ref={chatRef}>
-                  {messages.map((msg, index) => (
-                    <div key={index} className={`message ${msg.sender}`}>
-                      <div className="message-bubble">{msg.text}</div>
+                <Col className="overflow-auto">
+                  {messages.map((message, index) => (
+                    <div key={index} className={`message ${message.sender}`}>
+                      <div className="message-bubble">{message.text}</div>
                     </div>
                   ))}
-                  {loading && (
-                    <div className="message bot">
-                      <div className="message-bubble">Typing...</div>
-                    </div>
-                  )}
                 </Col>
               </Row>
 
@@ -99,17 +106,10 @@ function Chatbot() {
                       type="text"
                       placeholder="Type a message..."
                       value={input}
-                      disabled={loading}
                       onChange={(e) => setInput(e.target.value)}
-                      onKeyDown={(e) =>
-                        e.key === "Enter" && handleMessageSend()
-                      }
+                      onKeyDown={(e) => e.key === "Enter" && handleMessageSend()} // ✅ Fixed event
                     />
-                    <Button
-                      variant="success"
-                      onClick={handleMessageSend}
-                      disabled={loading}
-                    >
+                    <Button variant="success" onClick={handleMessageSend}>
                       <FaPaperPlane />
                     </Button>
                   </InputGroup>
@@ -122,5 +122,4 @@ function Chatbot() {
     </>
   );
 }
-
-export default Chatbot;
+ 
